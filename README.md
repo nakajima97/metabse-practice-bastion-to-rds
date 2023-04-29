@@ -1,15 +1,17 @@
-# Welcome to your CDK TypeScript project
+# 概要
 
-You should explore the contents of this project. It demonstrates a CDK app with an instance of a stack (`MetabsePracticeBastionToRdsStack`)
-which contains an Amazon SQS queue that is subscribed to an Amazon SNS topic.
+metabse となっているが正しくは metabase
+タイプミス
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+# 鍵の確認方法
 
-## Useful commands
+`cdk deploy`時に以下のような出力がある
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
+```bash
+Outputs:
+MetabsePracticeBastionToRdsStack.GetSSHKeyCommand = xxxxx
+```
+
+xxxxx のコマンドを実行すると鍵が出力されるのでコピーして適当な名前で保存する
+
+`ssh -i [保存した鍵] ec2-user@[ec2のIPアドレス]`でログインが可能

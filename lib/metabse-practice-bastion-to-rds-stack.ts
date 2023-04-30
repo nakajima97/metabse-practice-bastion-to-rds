@@ -1,5 +1,5 @@
 import { CfnKeyPair } from '@aws-cdk/aws-ec2';
-import { CfnOutput, Duration, RemovalPolicy, Stack, StackProps, Token, aws_ec2 } from 'aws-cdk-lib';
+import { CfnOutput, Duration, RemovalPolicy, Stack, StackProps, Token, aws_ec2, aws_rds } from 'aws-cdk-lib';
 import { Ec2Action } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { Instance, InstanceClass, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
 import * as sns from 'aws-cdk-lib/aws-sns';
@@ -65,5 +65,33 @@ export class MetabsePracticeBastionToRdsStack extends Stack {
       securityGroup: ec2SecurityGroup,
       keyName: Token.asString(cfnKeyPair.ref)
     });
+
+    // RDS
+    const rdsSecurityGroup = new aws_ec2.SecurityGroup(this, 'rds-security-group', {
+      allowAllOutbound: true,
+      description: "Allow 3306 in",
+      vpc
+    });
+    rdsSecurityGroup.addIngressRule(
+      ec2SecurityGroup,
+      aws_ec2.Port.tcp(3306),
+      'Allow 3306 access',
+    );
+
+    const rdsCredential = aws_rds.Credentials.fromGeneratedSecret('clusteradmin');
+    const rdsCluster = new aws_rds.DatabaseCluster(this, 'RDS', {
+      engine: aws_rds.DatabaseClusterEngine.auroraMysql({
+        version: aws_rds.AuroraMysqlEngineVersion.VER_3_02_1
+      }),
+      credentials: rdsCredential,
+      instanceProps: {
+        instanceType: aws_ec2.InstanceType.of(aws_ec2.InstanceClass.BURSTABLE3, aws_ec2.InstanceSize.MEDIUM),
+        vpcSubnets: {
+          subnetType: aws_ec2.SubnetType.PRIVATE_ISOLATED
+        },
+        vpc,
+        securityGroups: [rdsSecurityGroup]
+      },
+    })
   }
 }
